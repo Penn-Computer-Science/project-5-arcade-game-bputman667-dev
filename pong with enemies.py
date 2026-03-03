@@ -21,6 +21,9 @@ score_p2 = 0
 loop_id = None
 computer = True
 alive = True
+first_time = True
+power_up_1 = 0
+power_up_2 = 0
 
 def make_paddle_sprite():
     pattern = [
@@ -200,6 +203,7 @@ def move_ball():
     global ball_dy, ball_dx
     global score_p1
     global score_p2
+    global power_up_1, power_up_2
     for b in balls:
         canvas.move(b, ball_dx, ball_dy)
         bx1, by1, bx2, by2 = canvas.bbox(b)
@@ -210,12 +214,17 @@ def move_ball():
             balls.clear()
             set_up_balls()
             score_p2 += 1
+            if not computer:
+                power_up_2 += 1
+            power_up_1 = 0
             create_score_text()
         elif bx2 >= WIDTH:
             canvas.delete(b)
             balls.clear()
             set_up_balls()
             score_p1 += 1
+            power_up_1 += 1
+            power_up_2 = 0
             create_score_text()
 
 
@@ -281,8 +290,8 @@ def p2_move_down(event=None):
         elif p1_up == 1:
             canvas.move(paddles[0], 0, -8)
 
-def spawn_enemy_balls():
-    global enemy_balls, edx, edy
+def spawn_enemy_balls(player = computer):
+    global enemy_balls, edx, edy, power_up_1, power_up_2
     if computer:
         enemy_spawn = random.randint(1, 200)
         if enemy_spawn == 1:
@@ -297,13 +306,47 @@ def spawn_enemy_balls():
             enemy_balls.append(enemy_ball)
             enemy_dict_dx[enemy_ball] = edx
             enemy_dict_dy[enemy_ball] = edy
+    if player == "p1":
+        for i in range (3):
+            if i == 0:
+                edx = 5
+                edy = -3
+            if i == 1:
+                edx = 4
+                edy = 3
+            if i == 2:
+                edx = 5
+                edy = -5
+            enemy_ball = canvas.create_image(WIDTH//2, HEIGHT//2, image=enemy_ball_image, anchor = "nw")
+            enemy_balls.append(enemy_ball)
+            enemy_dict_dx[enemy_ball] = edx
+            enemy_dict_dy[enemy_ball] = edy
+            power_up_1 = 0
+
+    if player == "p2":
+        for i in range (3):
+            if i == 0:
+                edx = -5
+                edy = -3
+            if i == 1:
+                edx = -4
+                edy = 3
+            if i == 2:
+                edx = -5
+                edy = -5
+            enemy_ball = canvas.create_image(WIDTH//2, HEIGHT//2, image=enemy_ball_image, anchor = "nw")
+            enemy_balls.append(enemy_ball)
+            enemy_dict_dx[enemy_ball] = edx
+            enemy_dict_dy[enemy_ball] = edy
+            power_up_2 = 0
 
 def enemy_ball_movement():
-    global enemy_balls, edx, edy, score_p1
+    global enemy_balls, edx, edy, score_p1, score_p2
     for e in enemy_balls[:]:
         canvas.move(e, enemy_dict_dx[e], enemy_dict_dy[e])
         bx1, by1, bx2, by2 = canvas.bbox(e)
         px1, py1, px2, py2 = canvas.bbox(paddles[0])
+        p1x1, p1y1, p1x2, p1y2 = canvas.bbox(paddles[1])
         if by1 <= 0 or by2 >= HEIGHT:
             enemy_dict_dy[e] *= -1
         if bx1 <= 0:
@@ -315,22 +358,31 @@ def enemy_ball_movement():
             canvas.delete(e)
             enemy_balls.remove(e)
             del enemy_dict_dx[e]
-            del enemy_dict_dx[e]
-        if (bx1 < px2 or bx2 < px1) and by1 < py2+10 and by2 > py1-10:
+            del enemy_dict_dy[e]
+        if (bx1 < px2) and by1 < py2+10 and by2 > py1-10:
             canvas.delete(e)
             enemy_balls.remove(e)
             del enemy_dict_dx[e]
             del enemy_dict_dy[e]
             score_p1 -= 3
             create_score_text()
+        if (bx2 > p1x1) and by1 < p1y2+10 and by2 > p1y1-10:
+            canvas.delete(e)
+            enemy_balls.remove(e)
+            del enemy_dict_dx[e]
+            del enemy_dict_dy[e]
+            score_p2 -= 3
+            create_score_text()
 #starts for player vs computer and player vs player
 def start_computer(event):
-    global computer
+    global computer, first_time
+    first_time = False
     computer = True
     start()
 
 def start_multiplayer(event):
-    global computer
+    global computer, first_time
+    first_time = False
     computer = False
     start()
 
@@ -410,38 +462,46 @@ def game_over_check():
 
 #start function
 def start(event=None):
-    global alive
-    global score_p1
-    global score_p2
-    global ball_dx
-    global ball_dy
-    global loop_id
-    global paddles
-    global balls
-    global score_texts
-    global num_balls
-    global enemy_balls
-    global enemy_dict_dx
-    global enemy_dict_dy
-    alive = True
-    if loop_id:
-        root.after_cancel(loop_id)
-    paddles = []
-    balls = []
-    score_texts = []
-    enemy_balls = []
-    enemy_dict_dx = {}
-    enemy_dict_dy = {}
-    num_balls = 1
-    ball_dx = 0
-    ball_dy = 0
-    score_p1 = 0
-    score_p2 = 0
-    canvas.delete("all")
-    set_up_paddles()
-    set_up_balls()
-    create_score_text()
-    game_loop()
+    if first_time:
+        start_text = canvas.create_text(WIDTH//2, HEIGHT//2, text="press m to do multiplayer, press c to go against a computer", fill="white")
+        controls = canvas.create_text(WIDTH//2, (HEIGHT//2)+20, text="press arrow keys to move player one up/down, use w and s for player 2 (only on multiplayer)", fill="white")
+    else:
+        global alive
+        global score_p1
+        global score_p2
+        global ball_dx
+        global ball_dy
+        global loop_id
+        global paddles
+        global balls
+        global score_texts
+        global num_balls
+        global enemy_balls
+        global enemy_dict_dx
+        global enemy_dict_dy
+        global power_up_1
+        global power_up_2
+        alive = True
+        if loop_id:
+            root.after_cancel(loop_id)
+        paddles = []
+        balls = []
+        score_texts = []
+        enemy_balls = []
+        enemy_dict_dx = {}
+        enemy_dict_dy = {}
+        num_balls = 1
+        ball_dx = 0
+        ball_dy = 0
+        score_p1 = 0
+        score_p2 = 0
+        power_up_1 = 0
+        power_up_2 = 0
+        canvas.delete("all")
+        set_up_paddles()
+        set_up_balls()
+        create_score_text()
+        game_loop()
 
 root.bind("r", start)
 #game loop
@@ -454,9 +514,16 @@ def game_loop():
         if computer:
             paddle_computer()
             spawn_enemy_balls()
-            enemy_ball_movement()
+        enemy_ball_movement()
         game_over_check()
+        power_up()
     loop_id = root.after(40, game_loop)
+
+def power_up():
+    if power_up_1 >=5:
+        spawn_enemy_balls("p1")
+    if power_up_2 >=5:
+        spawn_enemy_balls("p2")
 
 #canvas builder
 canvas = tk.Canvas(root, width = WIDTH, height = HEIGHT, bg = "black")
