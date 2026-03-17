@@ -515,8 +515,8 @@ def game_loop():
             paddle_computer()
             spawn_enemy_balls()
         enemy_ball_movement()
-        game_over_check()
         power_up()
+        game_over_check()
     loop_id = root.after(40, game_loop)
 
 def power_up():
