@@ -333,7 +333,7 @@ def spawn_enemy_balls(player = computer):
                 edy = 3
             if i == 2:
                 edx = -5
-                edy = -5
+                edy = 0
             enemy_ball = canvas.create_image(WIDTH//2, HEIGHT//2, image=enemy_ball_image, anchor = "nw")
             enemy_balls.append(enemy_ball)
             enemy_dict_dx[enemy_ball] = edx
@@ -439,9 +439,9 @@ def paddle_computer():
     bx1, by1, bx2, by2 = canvas.bbox(balls[0])
     px1, py1, px2, py2 = canvas.bbox(paddles[1])
     if py1+5 > by1:
-        canvas.move(paddles[1], 0, -3)
+        canvas.move(paddles[1], 0, -4)
     if py2-5 < by2:
-        canvas.move(paddles[1], 0, 3)
+        canvas.move(paddles[1], 0, 4)
 
 
 
